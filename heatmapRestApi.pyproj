@@ -11,11 +11,17 @@
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <LaunchProvider>Web launcher</LaunchProvider>
-    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <WebBrowserUrl>
+    </WebBrowserUrl>
     <OutputPath>.</OutputPath>
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>heatmapRestApi</Name>
     <RootNamespace>heatmapRestApi</RootNamespace>
+    <PublishUrl>
+    </PublishUrl>
+    <Environment>FTP_SERVER_NAME_IGC=95.215.226.140
+FTP_LOGIN_IGC=netcoupe_ludoigc
+FTP_PASSWORD_IGC=IGC2020Sw7qo</Environment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,12 +32,26 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ftpClient.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="main.py" />
-    <Compile Include="main_test.py" />
+    <Compile Include="main_test.py">
+      <Publish>False</Publish>
+    </Compile>
+    <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.yaml" />
+    <None Include="FolderProfile.pubxml" />
     <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\igc_lib\igc_lib.pyproj">
+      <Name>igc_lib</Name>
+      <Project>{c7d8a499-cb80-42f1-807a-a8fa5c50e7e2}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
   <!-- Specify pre- and post-build commands in the BeforeBuild and 

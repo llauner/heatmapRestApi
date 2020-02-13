@@ -3,16 +3,51 @@ This script runs the application using a development server.
 It contains the definition of routes and views for the application.
 """
 # [START gae_python37_app]
-from flask import Flask
-from datetime import datetime
-import re
+try:
+  import googleclouddebugger
+  googleclouddebugger.enable()
+except ImportError:
+  pass
+
+from flask import Flask, jsonify
+from flask_restx import abort
+
+from datetime import datetime, date, time, timedelta
+import zipfile
+
+import os
+import sys
+import ftpClient
+import ftplib
+
+try:
+    import igc_lib
+    import igc2geojson
+except:
+    from igc_lib import igc_lib
+    from igc_lib import igc2geojson
+
+
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
 app = Flask(__name__)
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app
+
+### Constants ###
+ftp_server_name_igc = os.environ['FTP_SERVER_NAME_IGC'].strip()
+ftp_login_igc = os.environ['FTP_LOGIN_IGC'].strip()
+ftp_password_igc = os.environ['FTP_PASSWORD_IGC'].strip()
+
+def json_abort(status_code, data=None):
+    if data is None:
+        data = {}
+    response = jsonify(data)
+    response.status_code = status_code
+    abort(response)
 
 
 @app.route('/')
@@ -20,22 +55,32 @@ def hello():
     """Renders a sample page."""
     return "Hello World!"
 
-@app.route("/hello/<name>")
-def hello_there(name):
-    now = datetime.now()
-    formatted_now = now.strftime("%A, %d %B, %Y at %X")
+@app.route("/netcoupe/<flightId>")
+def get_netcoupe_flight_as_geojson(flightId):
+    geoJsonTrack = None
+    filename = flightId + ".zip"
 
-    # Filter the name argument to letters only using regular expressions. URL arguments
-    # can contain arbitrary text, so we restrict to safe characters only.
-    match_object = re.match("[a-zA-Z]+", name)
+    ftp_client_igc = ftpClient.get_ftp_client(ftp_server_name_igc, ftp_login_igc, ftp_password_igc)
+    try:
+        zip = ftpClient.get_file_from_ftp(ftp_client_igc, filename)
+    except ftplib.error_perm:
+        error_message = f"File not found ! : {filename}"
+        print(error_message)
+        json_abort(404, {'error': error_message}) 
+    except Exception as e:
+        error_message = f"Could not get file : {filename}"
+        print(error_message)
+        json_abort(404, {'error': error_message}) 
 
-    if match_object:
-        clean_name = match_object.group(0)
-    else:
-        clean_name = "Friend"
+    with zipfile.ZipFile(zip) as zip_file:
+                flight = igc_lib.Flight.create_from_zipfile(zip_file)
+                flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
+                geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
 
-    content = "Hello there, " + clean_name + "! It's " + formatted_now
-    return content
+    return jsonify(geoJsonTrack)
+
+
+
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
@@ -47,5 +92,5 @@ if __name__ == '__main__':
         PORT = int(os.environ.get('SERVER_PORT', '5555'))
     except ValueError:
         PORT = 5555
-    app.run(HOST, PORT)
+    app.run(HOST, '8080')
 # [END gae_python37_app]
