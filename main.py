@@ -52,8 +52,7 @@ def json_abort(status_code, data=None):
 
 @app.route('/')
 def hello():
-    """Renders a sample page."""
-    return "Hello World!"
+    return jsonify(message= "heatmapRestApi")
 
 @app.route("/netcoupe/<flightId>")
 def get_netcoupe_flight_as_geojson(flightId):
@@ -67,10 +66,6 @@ def get_netcoupe_flight_as_geojson(flightId):
         error_message = f"File not found ! : {filename}"
         print(error_message)
         json_abort(404, {'error': error_message}) 
-    except Exception as e:
-        error_message = f"Could not get file : {filename}"
-        print(error_message)
-        json_abort(404, {'error': error_message}) 
 
     with zipfile.ZipFile(zip) as zip_file:
                 flight = igc_lib.Flight.create_from_zipfile(zip_file)
@@ -78,8 +73,6 @@ def get_netcoupe_flight_as_geojson(flightId):
                 geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
 
     return jsonify(geoJsonTrack)
-
-
 
 
 if __name__ == '__main__':
