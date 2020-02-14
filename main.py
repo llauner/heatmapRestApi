@@ -11,6 +11,7 @@ except ImportError:
 
 from flask import Flask, jsonify
 from flask_restx import abort
+from flask_cors import CORS
 
 from datetime import datetime, date, time, timedelta
 import zipfile
@@ -33,6 +34,7 @@ except:
 # called `app` in `main.py`.
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+CORS(app)
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app

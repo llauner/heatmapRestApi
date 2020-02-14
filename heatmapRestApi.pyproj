@@ -36,14 +36,12 @@ FTP_PASSWORD_IGC=IGC2020Sw7qo</Environment>
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="main.py" />
-    <Compile Include="main_test.py">
-      <Publish>False</Publish>
-    </Compile>
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.yaml" />
     <None Include="FolderProfile.pubxml" />
+    <Content Include="build_release.ps1" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
