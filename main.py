@@ -9,9 +9,10 @@ try:
 except ImportError:
   pass
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_restx import abort
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
 from datetime import datetime, date, time, timedelta
 import zipfile
@@ -29,6 +30,7 @@ except:
     from igc_lib import igc2geojson
 
 
+ALLOWED_EXTENSIONS = {'igc'}             # Upload allowed file extensions
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -75,6 +77,33 @@ def get_netcoupe_flight_as_geojson(flightId):
                 geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
 
     return jsonify(geoJsonTrack)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/heatmap/igc', methods=['POST'])
+def upload_file():
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        json_abort(400, {'error': "file cannot be found in request"}) 
+
+    file = request.files['file']
+
+    # if user does not select file, browser also submit an empty part without filename
+    if file.filename == '':
+        json_abort(400, {'error': "No filename in request"}) 
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        
+        # File is OK, start computation
+        flight = igc_lib.Flight.create_from_bytesio(file)
+        flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
+        geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
+
+        return jsonify(geoJsonTrack)
+    return
 
 
 if __name__ == '__main__':
