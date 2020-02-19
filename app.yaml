@@ -1,1 +1,6 @@
 runtime: python37
+
+env_variables:
+  FTP_SERVER_NAME_IGC: "192.168.0.5"
+  FTP_LOGIN_IGC: "ftplogin"
+  FTP_PASSWORD_IGC: "ftppassword"

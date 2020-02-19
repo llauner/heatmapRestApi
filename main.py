@@ -82,7 +82,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/heatmap/igc', methods=['POST'])
+@app.route('/file/igc', methods=['POST'])
 def upload_file():
     # check if the post request has the file part
     if 'file' not in request.files:
@@ -99,10 +99,13 @@ def upload_file():
         
         # File is OK, start computation
         flight = igc_lib.Flight.create_from_bytesio(file)
-        flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
-        geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
 
-        return jsonify(geoJsonTrack)
+        if  flight.valid:
+            flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
+            geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
+            return jsonify(geoJsonTrack)
+        else:
+            json_abort(400, {'error': "The IGC file is not valid"}) 
     return
 
 
