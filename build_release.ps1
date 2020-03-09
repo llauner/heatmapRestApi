@@ -5,6 +5,7 @@ copy-item ./*.py .\release\
 
 copy-item ./app.yaml .\release\
 copy-item ./requirements.txt .\release\
+copy-item ./static	./release\ -Recurse
 
 # Copy igc_lib
 $exclude = @('requirements.txt', 'main.py', 'main_local.py',  'LICENSE', 'README.md', '.gitignore', '*.pyproj')
