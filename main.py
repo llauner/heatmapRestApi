@@ -22,6 +22,8 @@ import sys
 import ftpClient
 import ftplib
 
+from AirspaceChecker import AirspaceChecker
+
 try:
 	import igc_lib
 	import igc2geojson
@@ -128,6 +130,12 @@ def GetAirspaceAsZip():
 	except Exception as e:
 		json_abort(500, {'error':str(e)}) 
 
+@app.route('/airspace/test')
+def GetAirspaceInfringement():
+    airspaceChecker = AirspaceChecker()
+    airspaceChecker.run()
+
+GetAirspaceInfringement()
 
 
 if __name__ == '__main__':

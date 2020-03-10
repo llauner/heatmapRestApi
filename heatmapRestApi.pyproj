@@ -32,6 +32,9 @@ FTP_PASSWORD_IGC=IGC2020Sw7qo</Environment>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AirspaceChecker.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="ftpClient.py">
       <SubType>Code</SubType>
     </Compile>
