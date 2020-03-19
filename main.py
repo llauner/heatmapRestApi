@@ -4,15 +4,14 @@ It contains the definition of routes and views for the application.
 """
 # [START gae_python37_app]
 try:
-  import googleclouddebugger
-  googleclouddebugger.enable()
+	import googleclouddebugger
+	googleclouddebugger.enable()
 except ImportError:
-  pass
+	pass
 
 from flask import Flask, jsonify, request, send_file
 from flask_restx import abort
 from flask_cors import CORS
-from werkzeug.utils import secure_filename
 
 from datetime import datetime, date, time, timedelta
 import zipfile
@@ -21,8 +20,10 @@ import os
 import sys
 import ftpClient
 import ftplib
+import restApiService
 
 from AirspaceChecker import AirspaceChecker
+import common
 
 try:
 	import igc_lib
@@ -33,7 +34,6 @@ except:
 
 
 ALLOWED_EXTENSIONS = {'igc'}             # Upload allowed file extensions
-STATIC_FOLDER = "static"
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -46,11 +46,6 @@ CORS(app)
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app
-
-### Constants ###
-ftp_server_name_igc = os.environ['FTP_SERVER_NAME_IGC'].strip()
-ftp_login_igc = os.environ['FTP_LOGIN_IGC'].strip()
-ftp_password_igc = os.environ['FTP_PASSWORD_IGC'].strip()
 
 def json_abort(status_code, data=None):
 	if data is None:
@@ -66,27 +61,12 @@ def hello():
 
 @app.route("/netcoupe/<flightId>")
 def get_netcoupe_flight_as_geojson(flightId):
-	geoJsonTrack = None
-	filename = flightId + ".zip"
-
-	ftp_client_igc = ftpClient.get_ftp_client(ftp_server_name_igc, ftp_login_igc, ftp_password_igc)
-	try:
-		zip = ftpClient.get_file_from_ftp(ftp_client_igc, filename)
-	except ftplib.error_perm:
-		error_message = f"File not found ! : {filename}"
-		print(error_message)
-		json_abort(404, {'error': error_message}) 
-
-	with zipfile.ZipFile(zip) as zip_file:
-				flight = igc_lib.Flight.create_from_zipfile(zip_file)
-				flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
-				geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
-
+	geoJsonTrack = restApiService.getNetcoupeFlight(flightId)
 	return jsonify(geoJsonTrack)
 
 def allowed_file(filename):
 	return '.' in filename and \
-		   filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+			filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/file/igc', methods=['POST'])
 def upload_file():
@@ -99,16 +79,10 @@ def upload_file():
 	# if user does not select file, browser also submit an empty part without filename
 	if file.filename == '':
 		json_abort(400, {'error': "No filename in request"}) 
-		 
-	if file and allowed_file(file.filename):
-		filename = secure_filename(file.filename)
-		
-		# File is OK, start computation
-		flight = igc_lib.Flight.create_from_bytesio(file)
 
-		if  flight.valid:
-			flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
-			geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
+	if file and allowed_file(file.filename):
+		geoJsonTrack = restApiService.getGeojsonTrackFromIgcFile(file)
+		if geoJsonTrack:
 			return jsonify(geoJsonTrack)
 		else:
 			json_abort(400, {'error': "The IGC file is not valid"}) 
@@ -117,7 +91,7 @@ def upload_file():
 @app.route('/airspace/geojson/')
 def GetAirspaceAsGeojson():
 	try:
-		filename = os.path.join(STATIC_FOLDER, "airspace.geojson")
+		filename = common.getAirspaceFullFilename()
 		return send_file(filename, mimetype='application/json')
 	except Exception as e:
 		json_abort(500, {'error':str(e)}) 
@@ -125,7 +99,7 @@ def GetAirspaceAsGeojson():
 @app.route('/airspace/zip')
 def GetAirspaceAsZip():
 	try:
-		filename = os.path.join(STATIC_FOLDER, "airspace.zip")
+		filename = os.path.join(common.STATIC_FOLDER, "airspace.zip")
 		return send_file(filename, mimetype='application/zip')
 	except Exception as e:
 		json_abort(500, {'error':str(e)}) 
@@ -134,10 +108,8 @@ def GetAirspaceAsZip():
 def GetAirspaceInfringement():
     airspaceChecker = AirspaceChecker()
     airspaceChecker.run()
-
-GetAirspaceInfringement()
-
-
+    return jsonify(airspaceChecker.geojsonInfringedAirspace)
+    
 if __name__ == '__main__':
 	# This is used when running locally only. When deploying to Google App
 	# Engine, a webserver process such as Gunicorn will serve the app. This

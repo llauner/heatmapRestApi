@@ -9,3 +9,6 @@ geojson >= 2.5.0
 numpy >= 1.17.0
 google-cloud-storage >= 1.25.0
 python.dateutil >= 2.8.0
+shapely >= 1.7.0
+pandas <=1.0.2
+geopandas >=0.7.0
