@@ -9,7 +9,7 @@ def stringTofeet(altitude):
     if altitude == 'GND':
         altFeet = 0.0
     # F MSL
-    elif re.search('F MSL', altitude, re.IGNORECASE):
+    elif re.search('F MSL', altitude, re.IGNORECASE) or re.search('FT', altitude, re.IGNORECASE):
         alt = re.sub(r"\D", "", altitude)
         altFeet = float(alt)
     # F GND

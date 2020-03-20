@@ -22,7 +22,7 @@ ftp_login_igc = os.environ['FTP_LOGIN_IGC'].strip()
 ftp_password_igc = os.environ['FTP_PASSWORD_IGC'].strip()
 
 def getNetcoupeFlight(flightId):
-	geoJsonTrack = None
+	flight = None
 	filename = flightId + ".zip"
 
 	ftp_client_igc = ftpClient.get_ftp_client(ftp_server_name_igc, ftp_login_igc, ftp_password_igc)
@@ -35,16 +35,28 @@ def getNetcoupeFlight(flightId):
 
 	with zipfile.ZipFile(zip) as zip_file:
 				flight = igc_lib.Flight.create_from_zipfile(zip_file)
-				flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
-				geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
+    
+	return flight
 
+def getFlightAsGeojson(flight):
+	flight_date = datetime.fromtimestamp(flight.date_timestamp).date()
+	geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
 	return geoJsonTrack
 
-def getGeojsonTrackFromIgcFile(file):
+def getNetcoupeFlightAsGeojson(flightId):
+	flight = getNetcoupeFlight(flightId)
+	geoJsonTrack = getFlightAsGeojson(flight)
+	return geoJsonTrack
+
+def getFlightFromIgcFile(file):
 	filename = secure_filename(file.filename)
-	
-	# File is OK, start computation
+	# File is OK
 	flight = igc_lib.Flight.create_from_bytesio(file)
+	return flight
+
+def getGeojsonTrackFromIgcFile(file):
+	# File is OK, start computation
+	flight = getFlightFromIgcFile(file)
 
 	if  flight.valid:
 		flight_date = datetime.fromtimestamp(flight.date_timestamp).date()

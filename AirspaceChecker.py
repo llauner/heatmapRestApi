@@ -21,6 +21,7 @@ import geojson as gjson
 
 from flHelper import *
 import common
+import restApiService
 
 class AirspaceChecker:
 
@@ -28,6 +29,7 @@ class AirspaceChecker:
 		self.geojsonAirspace = None
 		self.igcFlight = None
 		self.geojsonInfringedAirspace = None
+		self.geojsonFlightTrack = None
 
 	def __loadData(self):
 		# Flight
@@ -37,7 +39,23 @@ class AirspaceChecker:
 		airsapceFilename = common.getAirspaceFullFilename()
 		with open(airsapceFilename) as jsonFile:
 			self.geojsonAirspace = json.loads(jsonFile.read(), object_hook=lambda d: gjson.Feature(**d))
-			
+
+	def __loadDataForNetcoupeFlight(self, flightId):
+		self.igcFlight = restApiService.getNetcoupeFlight(flightId)
+
+		# Airspace
+		airsapceFilename = common.getAirspaceFullFilename()
+		with open(airsapceFilename) as jsonFile:
+			self.geojsonAirspace = json.loads(jsonFile.read(), object_hook=lambda d: gjson.Feature(**d))
+	
+	def __loadDataForIgcFile(self, file):
+		self.igcFlight = restApiService.getFlightFromIgcFile(file)
+
+		# Airspace
+		airsapceFilename = common.getAirspaceFullFilename()
+		with open(airsapceFilename) as jsonFile:
+			self.geojsonAirspace = json.loads(jsonFile.read(), object_hook=lambda d: gjson.Feature(**d))
+
 	def __findCrossedAirspaces(self):
 		flightPoints = []
 		for fix in self.igcFlight.fixes:
@@ -56,7 +74,7 @@ class AirspaceChecker:
 			inside = trackPoints.intersects(polygon)
 			if inside:
 				crossedAirspacesDict[i] = polygon
-				print(f"Point crosses airspace (Horizontal only): {i} # {feature.properties.CLASS} # {feature.properties.NAME} # {feature.properties.CEILING} / {feature.properties.FLOOR}" )
+				#print(f"Point crosses airspace (Horizontal only): {i} # {feature.properties.CLASS} # {feature.properties.NAME} # {feature.properties.CEILING} / {feature.properties.FLOOR}" )
 				airspaceCeiling = stringToMeter(feature.properties.CEILING)
 				airspaceFloor = stringToMeter(feature.properties.FLOOR)
 		return crossedAirspacesDict
@@ -66,6 +84,7 @@ class AirspaceChecker:
 		flightPoints = []
 		for fix in self.igcFlight.fixes:
 			flightPoints.append(Point(fix.lon,fix.lat))
+
 
 		# Build geoPandas structures
 		crs = 'epsg:4326'
@@ -99,15 +118,24 @@ class AirspaceChecker:
 		infringedFeatures = np.take(self.geojsonAirspace.features, infringedAirspaceIndexes).tolist()
 
 		# Copy and re-create 
-		self.geojsonInfringedAirspace = copy.deepcopy(self.geojsonAirspace)
+		self.geojsonInfringedAirspace = self.geojsonAirspace # Reusing the airspace as it won't be used after that: prevents a copy
 		self.geojsonInfringedAirspace.features.clear()
 		self.geojsonInfringedAirspace.features.extend(infringedFeatures)
 
-		#print(json.dumps(self.geojsonInfringedAirspace))
 		return self.geojsonInfringedAirspace
 
 	def run(self):
 		self.__loadData()
+		crosssedAirspaces = self.__findCrossedAirspaces()
+		self.__analyseData(crosssedAirspaces)
+	
+	def runForNetcoupeFlightId(self, flightId):
+		self.__loadDataForNetcoupeFlight(flightId)
+		crosssedAirspaces = self.__findCrossedAirspaces()
+		self.__analyseData(crosssedAirspaces)
+
+	def runForIgcFile(self, file):
+		self.__loadDataForIgcFile(file)
 		crosssedAirspaces = self.__findCrossedAirspaces()
 		self.__analyseData(crosssedAirspaces)
 
