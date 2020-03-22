@@ -34,7 +34,8 @@ except:
 
 
 ALLOWED_EXTENSIONS = {'igc'}             # Upload allowed file extensions
-API_KEY_PARAMETER = 'api-key'
+API_KEY_PARAMETER = 'x_api_key'
+API_KEY_PARAMETER_HEADER = 'x-api-key'
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -116,11 +117,11 @@ def __checkAuthorization(submittedApiKey=None):
     if submittedApiKey:
         apiKey = submittedApiKey
     else:
-        apiKey = request.headers.get('api-key')
+        apiKey = request.headers.get(API_KEY_PARAMETER_HEADER)
     expectedApiKey = os.environ['API_KEY'].strip()
     
     if not apiKey == expectedApiKey:
-        json_abort(401, {'error': "Missing or invalid api-key"}) 
+        json_abort(401, {'error': f"Missing or invalid header: {API_KEY_PARAMETER_HEADER}"}) 
 
 @app.route('/auth', methods=['POST'])
 def Authenticate():
@@ -130,7 +131,7 @@ def Authenticate():
 	params = request.get_json(force=True)
 	apiKey = params.get(API_KEY_PARAMETER)
 	if not apiKey:
-		json_abort(400, {'error': "Missing or invalid api-key parameter"}) 
+		json_abort(400, {'error': f"Missing or invalid json value: {API_KEY_PARAMETER}"}) 
 	# Check Authorization
 	__checkAuthorization(apiKey)
 	response = {'message': "Authentication success: api-key OK !"}
