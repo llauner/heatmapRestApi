@@ -112,8 +112,10 @@ def __checkAuthorization(submittedApiKey=None):
         apiKey = request.headers.get(API_KEY_PARAMETER_HEADER)
     expectedApiKey = os.environ['API_KEY'].strip()
     
-    if not apiKey == expectedApiKey:
-        common.json_abort(401, {'error': f"Missing or invalid header: {API_KEY_PARAMETER_HEADER}"}) 
+    if not apiKey:
+        common.json_abort(401, {'error': f"Missing header: {API_KEY_PARAMETER_HEADER}"}) 
+    elif not apiKey == expectedApiKey:
+        common.json_abort(401, {'error': f"Invalid credentials !"}) 
 
 @app.route('/auth', methods=['POST'])
 def Authenticate():
@@ -123,7 +125,7 @@ def Authenticate():
 	params = request.get_json(force=True)
 	apiKey = params.get(API_KEY_PARAMETER)
 	if not apiKey:
-		common.json_abort(400, {'error': f"Missing or invalid json value: {API_KEY_PARAMETER}"}) 
+		common.json_abort(400, {'error': f"Missing json value: {API_KEY_PARAMETER}"}) 
 	# Check Authorization
 	__checkAuthorization(apiKey)
 	response = {'message': "Authentication success: api-key OK !"}
