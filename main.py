@@ -49,14 +49,6 @@ CORS(app)
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app
 
-def json_abort(status_code, data=None):
-	if data is None:
-		data = {}
-	response = jsonify(data)
-	response.status_code = status_code
-	abort(response)
-
-
 @app.route('/')
 def hello():
 	return jsonify(message= "heatmapRestApi")
@@ -73,16 +65,16 @@ def allowed_file(filename):
 def __checkFile():
     # check if the post request has the file part
 	if 'file' not in request.files:
-		json_abort(400, {'error': "file cannot be found in request"}) 
+		common.json_abort(400, {'error': "file cannot be found in request"}) 
 
 	file = request.files['file']
 
 	# if user does not select file, browser also submit an empty part without filename
 	if file.filename == '':
-		json_abort(400, {'error': "No filename in request"})
+		common.json_abort(400, {'error': "No filename in request"})
 
 	if not file or not allowed_file(file.filename):
-		json_abort(400, {'error': "The IGC file is not valid"}) 
+		common.json_abort(400, {'error': "The IGC file is not valid"}) 
 
 	return file
     
@@ -100,7 +92,7 @@ def GetAirspaceAsGeojson():
 		filename = common.getAirspaceFullFilename()
 		return send_file(filename, mimetype='application/json')
 	except Exception as e:
-		json_abort(500, {'error':str(e)}) 
+		common.json_abort(500, {'error':str(e)}) 
 
 @app.route('/airspace/zip')
 def GetAirspaceAsZip():
@@ -108,7 +100,7 @@ def GetAirspaceAsZip():
 		filename = os.path.join(common.STATIC_FOLDER, "airspace.zip")
 		return send_file(filename, mimetype='application/zip')
 	except Exception as e:
-		json_abort(500, {'error':str(e)}) 
+		common.json_abort(500, {'error':str(e)}) 
 
 # --------------------------------- Authorized functionalities ---------------------------------
 def __checkAuthorization(submittedApiKey=None):
@@ -121,17 +113,17 @@ def __checkAuthorization(submittedApiKey=None):
     expectedApiKey = os.environ['API_KEY'].strip()
     
     if not apiKey == expectedApiKey:
-        json_abort(401, {'error': f"Missing or invalid header: {API_KEY_PARAMETER_HEADER}"}) 
+        common.json_abort(401, {'error': f"Missing or invalid header: {API_KEY_PARAMETER_HEADER}"}) 
 
 @app.route('/auth', methods=['POST'])
 def Authenticate():
 	# Check params
 	if not request.is_json:
-		json_abort(401, {'error': "expecting json input"})
+		common.json_abort(401, {'error': "expecting json input"})
 	params = request.get_json(force=True)
 	apiKey = params.get(API_KEY_PARAMETER)
 	if not apiKey:
-		json_abort(400, {'error': f"Missing or invalid json value: {API_KEY_PARAMETER}"}) 
+		common.json_abort(400, {'error': f"Missing or invalid json value: {API_KEY_PARAMETER}"}) 
 	# Check Authorization
 	__checkAuthorization(apiKey)
 	response = {'message': "Authentication success: api-key OK !"}

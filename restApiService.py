@@ -1,5 +1,6 @@
 
 from datetime import datetime, date, time, timedelta
+from flask_restx import abort
 import zipfile
 
 from werkzeug.utils import secure_filename
@@ -8,6 +9,8 @@ import os
 import sys
 import ftpClient
 import ftplib
+
+import common
 
 try:
 	import igc_lib
@@ -31,7 +34,7 @@ def getNetcoupeFlight(flightId):
 	except ftplib.error_perm:
 		error_message = f"File not found ! : {filename}"
 		print(error_message)
-		json_abort(404, {'error': error_message}) 
+		common.json_abort(404, {'error': error_message}) 
 
 	with zipfile.ZipFile(zip) as zip_file:
 				flight = igc_lib.Flight.create_from_zipfile(zip_file)
