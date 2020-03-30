@@ -102,6 +102,14 @@ def GetAirspaceAsZip():
 	except Exception as e:
 		common.json_abort(500, {'error':str(e)}) 
 
+@app.route('/json/files')
+def GetJsonFileList():
+	try:
+		fileList = restApiService.getGeoJsonFileList()
+		return jsonify(jsonFileList = fileList)
+	except Exception as e:
+		common.json_abort(500, {'error':str(e)}) 
+
 # --------------------------------- Authorized functionalities ---------------------------------
 def __checkAuthorization(submittedApiKey=None):
     apiKey = None

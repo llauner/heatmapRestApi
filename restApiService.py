@@ -2,6 +2,7 @@
 from datetime import datetime, date, time, timedelta
 from flask_restx import abort
 import zipfile
+import pathlib
 
 from werkzeug.utils import secure_filename
 
@@ -23,6 +24,10 @@ except:
 ftp_server_name_igc = os.environ['FTP_SERVER_NAME_IGC'].strip()
 ftp_login_igc = os.environ['FTP_LOGIN_IGC'].strip()
 ftp_password_igc = os.environ['FTP_PASSWORD_IGC'].strip()
+
+ftp_server_name_heatmap = os.environ['FTP_SERVER_NAME_HEATMAP'].strip()
+ftp_login_heatmap = os.environ['FTP_LOGIN_HEATMAP'].strip()
+ftp_password_heatmap = os.environ['FTP_PASSWORD_HEATMAP'].strip()
 
 def getNetcoupeFlight(flightId):
 	flight = None
@@ -66,4 +71,16 @@ def getGeojsonTrackFromIgcFile(file):
 		geoJsonTrack = igc2geojson.dump_track_to_feature_collection(flight)
 		return geoJsonTrack
 	else:
-		return false
+		return False
+
+def getGeoJsonFileList():
+	ftpClientHeatmap = ftpClient.get_ftp_client(ftp_server_name_heatmap, ftp_login_heatmap, ftp_password_heatmap)
+	file_names = []
+	files = ftpClientHeatmap.mlsd(path=common.GEOJSON_FOLDER)   # List files from FTP
+
+	for file in files:
+		name = file[0]
+		suffix = pathlib.Path(name).suffix.replace('.','')
+		if suffix == "json":
+			file_names.append(name)
+	return file_names
