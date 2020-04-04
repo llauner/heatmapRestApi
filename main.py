@@ -12,6 +12,8 @@ except ImportError:
 from flask import Flask, jsonify, request, send_file
 from flask_restx import abort
 from flask_cors import CORS
+from flask.json import JSONEncoder
+from flaskthreads import AppContextThread
 
 from datetime import datetime, date, time, timedelta
 import zipfile
@@ -28,10 +30,23 @@ import common
 try:
 	import igc_lib
 	import igc2geojson
+	import FtpHelper
+	import CumulativeTrackBuilder as ctb
+	import RunMetadata as rmd
+	from FtpHelper import FtpHelper
 except:
-	from igc_lib import igc_lib
+	from igc_lib import igc_lib, FtpHelper
+	from igc_lib import CumulativeTrackBuilder as ctb
+	from igc_lib import RunMetadata as rmd
 	from igc_lib import igc2geojson
 
+# ********** Custom Json encoder class **********
+class CustomEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, rmd.RunMetadata):
+            return o.to_json()
+        return JSONEncoder.default(self, o)
+# ***********************************************
 
 ALLOWED_EXTENSIONS = {'igc'}             # Upload allowed file extensions
 API_KEY_PARAMETER = 'x_api_key'
@@ -42,8 +57,8 @@ API_KEY_PARAMETER_HEADER = 'x-api-key'
 app = Flask(__name__,
 			static_url_path='', 
 			static_folder='static')
-
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+app.json_encoder = CustomEncoder
 CORS(app)
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
@@ -108,8 +123,33 @@ def GetJsonFileList():
 		fileList = restApiService.getGeoJsonFileList()
 		return jsonify(jsonFileList = fileList)
 	except Exception as e:
-		common.json_abort(500, {'error':str(e)}) 
+		common.json_abort(500, {'error':str(e)})
 
+# --------------------------------- Long running Tasks ---------------------------------
+
+def serialize(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, rmd.RunMetadata):
+        serial = obj.toJSON()
+        return serial
+    return obj.__dict__
+
+@app.route('/run/tracks')
+def ComputeCumulativeTrack():
+	try:
+		t = AppContextThread(target=_cumulativeTracksRun)
+		t.start()
+		return jsonify({'message':'Worker Thread launched ...'})
+	except Exception as e:
+		common.json_abort(500, {'error':str(e)})
+
+def _cumulativeTracksRun():
+	ftp_client_igc = FtpHelper.get_ftp_client(restApiService.ftp_server_name_igc, restApiService.ftp_login_igc, restApiService.ftp_password_igc)
+	ftpClientOut = FtpHelper(restApiService.ftp_server_name_heatmap, restApiService.ftp_login_heatmap, restApiService.ftp_password_heatmap)
+	cumulativeTrackBuilder = ctb.CumulativeTrackBuilder(ftp_client_igc, ftpClientOut, None, useLocalDirectory=True, isOutToLocalFiles=True)
+	metadata = cumulativeTrackBuilder.run()
+    
 # --------------------------------- Authorized functionalities ---------------------------------
 def __checkAuthorization(submittedApiKey=None):
     apiKey = None
