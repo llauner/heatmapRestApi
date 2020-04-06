@@ -48,6 +48,8 @@ class CustomEncoder(JSONEncoder):
         return JSONEncoder.default(self, o)
 # ***********************************************
 
+IS_DEBUG = True if os.environ.get('DEBUG') is not None else False
+
 ALLOWED_EXTENSIONS = {'igc'}             # Upload allowed file extensions
 API_KEY_PARAMETER = 'x_api_key'
 API_KEY_PARAMETER_HEADER = 'x-api-key'
@@ -216,5 +218,5 @@ if __name__ == '__main__':
 		PORT = int(os.environ.get('SERVER_PORT', '5555'))
 	except ValueError:
 		PORT = 5555
-	app.run(HOST, '8080')
+	app.run(HOST, '8080', debug=IS_DEBUG)
 # [END gae_python37_app]
