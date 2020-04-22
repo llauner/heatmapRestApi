@@ -29,3 +29,14 @@ rm -rf ./release/.git
 rm -rf ./release/.vscode
 rm -rf ./release/__pycache__
 rm -rf ./release/lib/__pycache__
+
+echo "Exporting environment variables..."
+export FTP_SERVER_NAME_IGC="95.215.226.140"
+export FTP_LOGIN_IGC="netcoupe_ludoigc"
+export FTP_PASSWORD_IGC="IGC2020Sw7qo"
+export FTP_SERVER_NAME_HEATMAP="ftp3.phpnet.org"
+export FTP_LOGIN_HEATMAP="netcoupe_DG800ludo"
+export FTP_PASSWORD_HEATMAP="SIx4m8nu_"
+export API_KEY="dg808b-8-219-b-133"
+
+cd ./release
