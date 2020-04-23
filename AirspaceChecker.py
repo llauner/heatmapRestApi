@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import geojson as gjson
+import requests
 
 from flHelper import *
 import common
@@ -44,17 +45,24 @@ class AirspaceChecker:
 		self.igcFlight = restApiService.getNetcoupeFlight(flightId)
 
 		# Airspace
-		airsapceFilename = common.getAirspaceFullFilename()
-		with open(airsapceFilename) as jsonFile:
-			self.geojsonAirspace = json.loads(jsonFile.read(), object_hook=lambda d: gjson.Feature(**d))
+		#self.__loadAirspace()
+		self.__loadAirspaceFromUrl()
 	
 	def __loadDataForIgcFile(self, file):
 		self.igcFlight = restApiService.getFlightFromIgcFile(file)
 
 		# Airspace
+		#self.__loadAirspace()
+		self.__loadAirspaceFromUrl()
+
+	def __loadAirspace(self):
 		airsapceFilename = common.getAirspaceFullFilename()
 		with open(airsapceFilename) as jsonFile:
 			self.geojsonAirspace = json.loads(jsonFile.read(), object_hook=lambda d: gjson.Feature(**d))
+
+	def __loadAirspaceFromUrl(self):
+		r = requests.get(common.NETCOUPE_OPENAIR_AIRPSACE_URL)
+		self.geojsonAirspace = json.loads(r.text, object_hook=lambda d: gjson.Feature(**d))
 
 	def __findCrossedAirspaces(self):
 		flightPoints = []

@@ -16,3 +16,4 @@ matplotlib >= 3.2.1
 mplleaflet >= 0.0.5
 Flask-Threads >= 0.0.1a0
 progress
+requests
