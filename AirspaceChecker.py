@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import geojson as gjson
-import requests
+import requests  
 
 from flHelper import *
 import common
@@ -26,11 +26,15 @@ import restApiService
 
 class AirspaceChecker:
 
-	def __init__(self):
+	def __init__(self, isDebug):
+		self.isDebug = isDebug
 		self.geojsonAirspace = None
 		self.igcFlight = None
 		self.geojsonInfringedAirspace = None
 		self.geojsonFlightTrack = None
+		self.geojsonInfringedPoints = None
+
+		self.airspaceAnalysisResult = {'geojsonInfringedAirspace':None, 'geojsonInfringedPoints':None}
 
 	def __loadData(self):
 		# Flight
@@ -45,15 +49,19 @@ class AirspaceChecker:
 		self.igcFlight = restApiService.getNetcoupeFlight(flightId)
 
 		# Airspace
-		#self.__loadAirspace()
-		self.__loadAirspaceFromUrl()
+		if self.isDebug:
+			self.__loadAirspace()
+		else :
+			self.__loadAirspaceFromUrl()
 	
 	def __loadDataForIgcFile(self, file):
 		self.igcFlight = restApiService.getFlightFromIgcFile(file)
 
 		# Airspace
-		#self.__loadAirspace()
-		self.__loadAirspaceFromUrl()
+		if self.isDebug:
+			self.__loadAirspace()
+		else :
+			self.__loadAirspaceFromUrl()
 
 	def __loadAirspace(self):
 		airsapceFilename = common.getAirspaceFullFilename()
@@ -101,6 +109,8 @@ class AirspaceChecker:
 
 		# Browse through airspaces regions to find points inside the airspace (vertically)
 		infringedAirspaceIndexes = []
+		infringedPoints = []
+
 		for i, region in enumerate(regions):
 			res = points.within(region)
 			if res.any():
@@ -122,6 +132,18 @@ class AirspaceChecker:
 					infringedAirspaceIndexes.append(airspaceIndex)
 					print(f"Point inside airspace: {airspaceIndex} # {airspace.properties.CLASS} # {airspace.properties.NAME} # {airspace.properties.CEILING} / {airspace.properties.FLOOR} = {airspaceCeiling}m / {airspaceFloor}m" )
 					print(f"Fix 1 / {fixesInsideAirspace.size} : {fixesInsideAirspace[0]}")
+
+					# Add mid position Point
+					middle = int(fixesInsideAirspace.size/2)
+					midFix = fixesInsideAirspace[middle]
+					midFixTime = "%02d:%02d:%02d"%(igc_lib._rawtime_float_to_hms(midFix.rawtime))
+					midPoint = gjson.Point((midFix.lon, midFix.lat))
+
+					feature = gjson.Feature(geometry=midPoint, properties={'alt': int(midFix.alt), 'time': midFixTime})
+					infringedPoints.append(feature)
+		# Add Infringed Points to Feature Collection
+		self.geojsonInfringedPoints = gjson.FeatureCollection(infringedPoints)
+
 		# Get the geojson list of ingringed airspaces only
 		infringedFeatures = np.take(self.geojsonAirspace.features, infringedAirspaceIndexes).tolist()
 
@@ -130,7 +152,11 @@ class AirspaceChecker:
 		self.geojsonInfringedAirspace.features.clear()
 		self.geojsonInfringedAirspace.features.extend(infringedFeatures)
 
-		return self.geojsonInfringedAirspace
+		# Build response
+		self.airspaceAnalysisResult['geojsonInfringedAirspace'] = self.geojsonInfringedAirspace
+		self.airspaceAnalysisResult['geojsonInfringedPoints'] = self.geojsonInfringedPoints
+
+		return self.airspaceAnalysisResult
 
 	def run(self):
 		self.__loadData()

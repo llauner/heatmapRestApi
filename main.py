@@ -199,11 +199,11 @@ def GetAirspaceInfringementForIgcFile():
     
     file = __checkFile()
     # Check airspace
-    airspaceChecker = AirspaceChecker()
+    airspaceChecker = AirspaceChecker(IS_DEBUG)
     airspaceChecker.runForIgcFile(file)
     
     # Build response
-    response = airspaceChecker.geojsonInfringedAirspace
+    response = airspaceChecker.airspaceAnalysisResult
     return jsonify(response)
     
 
