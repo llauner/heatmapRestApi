@@ -151,6 +151,7 @@ def _cumulativeTracksRun():
 	ftpClientOut = FtpHelper(restApiService.ftp_server_name_heatmap, restApiService.ftp_login_heatmap, restApiService.ftp_password_heatmap)
 	cumulativeTrackBuilder = ctb.CumulativeTrackBuilder(ftp_client_igc, ftpClientOut, None, useLocalDirectory=False, isOutToLocalFiles=False)
 	metadata = cumulativeTrackBuilder.run()
+	print(">>> Done.")
     
 # --------------------------------- Authorized functionalities ---------------------------------
 def __checkAuthorization(submittedApiKey=None):
