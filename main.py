@@ -3,11 +3,11 @@ This script runs the application using a development server.
 It contains the definition of routes and views for the application.
 """
 # [START gae_python37_app]
-try:
-	import googleclouddebugger
-	googleclouddebugger.enable()
-except ImportError:
-	pass
+# try:
+# 	import googleclouddebugger
+# 	googleclouddebugger.enable()
+# except ImportError:
+# 	pass
 
 from flask import Flask, jsonify, request, send_file
 from flask_restx import abort
@@ -61,7 +61,7 @@ app = Flask(__name__,
 			static_folder='static')
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 app.json_encoder = CustomEncoder
-CORS(app)
+cors = CORS(app)
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app

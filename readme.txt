@@ -1,0 +1,1 @@
+To delete older versions: appengine-clean my-project-id 15 --dry-run
