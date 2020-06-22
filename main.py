@@ -187,7 +187,7 @@ def GetAirspaceInfringementForNetcoupe(flightId):
     __checkAuthorization() # Check api-key in header
     
 	# Check airspace
-    airspaceChecker = AirspaceChecker()
+    airspaceChecker = AirspaceChecker(IS_DEBUG)
     airspaceChecker.runForNetcoupeFlightId(flightId)
     
     # Build response
