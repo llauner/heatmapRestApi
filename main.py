@@ -16,12 +16,9 @@ from flask.json import JSONEncoder
 from flaskthreads import AppContextThread
 
 from datetime import datetime, date, time, timedelta
-import zipfile
 
 import os
 import sys
-import ftpClient
-import ftplib
 import restApiService
 
 from AirspaceChecker import AirspaceChecker
@@ -31,21 +28,19 @@ try:
 	import igc_lib
 	import igc2geojson
 	import FtpHelper
-	import CumulativeTrackBuilder as ctb
 	import RunMetadata as rmd
 	from FtpHelper import FtpHelper
 except:
 	from igc_lib import igc_lib, FtpHelper
-	from igc_lib import CumulativeTrackBuilder as ctb
 	from igc_lib import RunMetadata as rmd
 	from igc_lib import igc2geojson
 
 # ********** Custom Json encoder class **********
 class CustomEncoder(JSONEncoder):
-    def default(self, o):
-        if isinstance(o, rmd.RunMetadata):
-            return o.to_json()
-        return JSONEncoder.default(self, o)
+	def default(self, o):
+		if isinstance(o, rmd.RunMetadata):
+			return o.to_json()
+		return JSONEncoder.default(self, o)
 # ***********************************************
 
 IS_DEBUG = True if os.environ.get('DEBUG') is not None else False
@@ -80,7 +75,7 @@ def allowed_file(filename):
 			filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def __checkFile():
-    # check if the post request has the file part
+	# check if the post request has the file part
 	if 'file' not in request.files:
 		common.json_abort(400, {'error': "file cannot be found in request"}) 
 
@@ -94,7 +89,7 @@ def __checkFile():
 		common.json_abort(400, {'error': "The IGC file is not valid"}) 
 
 	return file
-    
+	
 @app.route('/file/igc', methods=['POST'])
 def upload_file():
 	file = __checkFile()
@@ -119,54 +114,37 @@ def GetAirspaceAsZip():
 	except Exception as e:
 		common.json_abort(500, {'error':str(e)}) 
 
-@app.route('/json/files')
-def GetJsonFileList():
-	try:
-		fileList = restApiService.getGeoJsonFileList()
-		return jsonify(jsonFileList = fileList)
-	except Exception as e:
-		common.json_abort(500, {'error':str(e)})
-
-# --------------------------------- Long running Tasks ---------------------------------
+#@app.route('/json/files')
+#def GetJsonFileList():
+#	try:
+#		fileList = restApiService.getGeoJsonFileList()
+#		return jsonify(jsonFileList = fileList)
+#	except Exception as e:
+#		common.json_abort(500, {'error':str(e)})
 
 def serialize(obj):
-    """JSON serializer for objects not serializable by default json code"""
+	"""JSON serializer for objects not serializable by default json code"""
 
-    if isinstance(obj, rmd.RunMetadata):
-        serial = obj.toJSON()
-        return serial
-    return obj.__dict__
+	if isinstance(obj, rmd.RunMetadata):
+		serial = obj.toJSON()
+		return serial
+	return obj.__dict__
 
-@app.route('/run/tracks')
-def ComputeCumulativeTrack():
-	try:
-		t = AppContextThread(target=_cumulativeTracksRun)
-		t.start()
-		return jsonify({'message':'Worker Thread launched ...'})
-	except Exception as e:
-		common.json_abort(500, {'error':str(e)})
-
-def _cumulativeTracksRun():
-	ftp_client_igc = FtpHelper.get_ftp_client(restApiService.ftp_server_name_igc, restApiService.ftp_login_igc, restApiService.ftp_password_igc)
-	ftpClientOut = FtpHelper(restApiService.ftp_server_name_heatmap, restApiService.ftp_login_heatmap, restApiService.ftp_password_heatmap)
-	cumulativeTrackBuilder = ctb.CumulativeTrackBuilder(ftp_client_igc, ftpClientOut, None, useLocalDirectory=False, isOutToLocalFiles=False)
-	metadata = cumulativeTrackBuilder.run()
-	print(">>> Done.")
-    
+	
 # --------------------------------- Authorized functionalities ---------------------------------
 def __checkAuthorization(submittedApiKey=None):
-    apiKey = None
-    # Check api-key in header
-    if submittedApiKey:
-        apiKey = submittedApiKey
-    else:
-        apiKey = request.headers.get(API_KEY_PARAMETER_HEADER)
-    expectedApiKey = os.environ['API_KEY'].strip()
-    
-    if not apiKey:
-        common.json_abort(401, {'error': f"Missing header: {API_KEY_PARAMETER_HEADER}"}) 
-    elif not apiKey == expectedApiKey:
-        common.json_abort(401, {'error': f"Invalid credentials !"}) 
+	apiKey = None
+	# Check api-key in header
+	if submittedApiKey:
+		apiKey = submittedApiKey
+	else:
+		apiKey = request.headers.get(API_KEY_PARAMETER_HEADER)
+	expectedApiKey = os.environ['API_KEY'].strip()
+	
+	if not apiKey:
+		common.json_abort(401, {'error': f"Missing header: {API_KEY_PARAMETER_HEADER}"}) 
+	elif not apiKey == expectedApiKey:
+		common.json_abort(401, {'error': f"Invalid credentials !"}) 
 
 @app.route('/auth', methods=['POST'])
 def Authenticate():
@@ -184,29 +162,29 @@ def Authenticate():
 
 @app.route('/airspace/netcoupe/<flightId>')
 def GetAirspaceInfringementForNetcoupe(flightId):
-    __checkAuthorization() # Check api-key in header
-    
+	__checkAuthorization() # Check api-key in header
+	
 	# Check airspace
-    airspaceChecker = AirspaceChecker(IS_DEBUG)
-    airspaceChecker.runForNetcoupeFlightId(flightId)
-    
-    # Build response
-    response = airspaceChecker.geojsonInfringedAirspace
-    return jsonify(response)
+	airspaceChecker = AirspaceChecker(IS_DEBUG)
+	airspaceChecker.runForNetcoupeFlightId(flightId)
+	
+	# Build response
+	response = airspaceChecker.geojsonInfringedAirspace
+	return jsonify(response)
 
 @app.route('/airspace/file/igc', methods=['POST'])
 def GetAirspaceInfringementForIgcFile():
-    __checkAuthorization() # Check api-key in header
-    
-    file = __checkFile()
-    # Check airspace
-    airspaceChecker = AirspaceChecker(IS_DEBUG)
-    airspaceChecker.runForIgcFile(file)
-    
-    # Build response
-    response = airspaceChecker.airspaceAnalysisResult
-    return jsonify(response)
-    
+	__checkAuthorization() # Check api-key in header
+	
+	file = __checkFile()
+	# Check airspace
+	airspaceChecker = AirspaceChecker(IS_DEBUG)
+	airspaceChecker.runForIgcFile(file)
+	
+	# Build response
+	response = airspaceChecker.airspaceAnalysisResult
+	return jsonify(response)
+	
 
 # ---------------------------------------------------------------------------------------------- 
 if __name__ == '__main__':

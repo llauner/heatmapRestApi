@@ -7,10 +7,9 @@
     <ProjectHome>.</ProjectHome>
     <ProjectTypeGuids>{789894c7-04a9-4a11-a6b5-3f4435165112};{1b580a1a-fdb3-4b32-83e1-6407eb2722e6};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <StartupFile>main.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <SearchPath>..\igc_lib</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
-    <LaunchProvider>Web launcher</LaunchProvider>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
     <WebBrowserUrl>
     </WebBrowserUrl>
     <OutputPath>.</OutputPath>
@@ -19,9 +18,9 @@
     <RootNamespace>heatmapRestApi</RootNamespace>
     <PublishUrl>
     </PublishUrl>
-    <Environment>FTP_SERVER_NAME_IGC=95.215.226.140
-FTP_LOGIN_IGC=netcoupe_ludoigc
-FTP_PASSWORD_IGC=IGC2020Sw7qo</Environment>
+    <Environment>GOOGLE_APPLICATION_CREDENTIALS=C:\llauner\GoogleCloud_Credentials\Service_Account_Key-igcheatmap-f012be117f9c.json</Environment>
+    <InterpreterId>MSBuild|venv_heatmapRestApi|$(MSBuildProjectFullPath)</InterpreterId>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,23 +38,29 @@ FTP_PASSWORD_IGC=IGC2020Sw7qo</Environment>
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="main.py" />
+    <Compile Include="restApiService.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.yaml" />
     <None Include="FolderProfile.pubxml" />
     <Content Include="build_release.ps1" />
+    <Content Include="readme.txt" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\igc_lib\igc_lib.pyproj">
-      <Name>igc_lib</Name>
-      <Project>{c7d8a499-cb80-42f1-807a-a8fa5c50e7e2}</Project>
-      <Private>True</Private>
-    </ProjectReference>
+    <Folder Include="static\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="static\" />
+    <Interpreter Include="venv_heatmapRestApi\">
+      <Id>venv_heatmapRestApi</Id>
+      <Version>3.7</Version>
+      <Description>venv_heatmapRestApi (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
   <!-- Specify pre- and post-build commands in the BeforeBuild and 
