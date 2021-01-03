@@ -27,14 +27,15 @@ from StorageService import StorageService
 def getNetcoupeFlight(flightId):
     flight = None
     filename = f"NetCoupe{datetime.now().year}_{flightId}.igc"
+    filename_last_year = f"NetCoupe{datetime.now().year - 1}_{flightId}.igc"
 
     storageService = StorageService(None)
-    fullFilePath = storageService.GetFileFullpathFromName(filename)
+    bucket_name, fullFilePath = storageService.GetFileFullpathFromName(filename, filename_last_year)
 
     if (fullFilePath is None):
         common.json_abort(404, {'error': f"Cannot find flight: {flightId}"})
 
-    file_as_bytesio = storageService.GetFileAsString(fullFilePath)
+    file_as_bytesio = storageService.GetFileAsStringFromBucket(bucket_name, fullFilePath)
 
     flight = igc_lib.Flight.create_from_bytesio(file_as_bytesio)
     file_as_bytesio.close
